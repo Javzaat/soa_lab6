@@ -1,0 +1,5 @@
+package com.example.userjson.soap;
+
+public class SoapAuthClient {
+
+}

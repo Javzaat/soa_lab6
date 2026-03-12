@@ -1,0 +1,5 @@
+package com.example.authsoap.endpoint;
+
+public class AuthEndpoint {
+
+}

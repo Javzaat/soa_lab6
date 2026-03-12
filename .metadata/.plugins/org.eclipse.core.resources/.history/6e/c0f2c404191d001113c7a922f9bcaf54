@@ -1,0 +1,5 @@
+package com.example.authsoap.config;
+
+public class WebServiceConfig {
+
+}

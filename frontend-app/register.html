@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
+</head>
+<body>
+    <h1>Register Page</h1>
+
+    <label for="username">Username:</label><br>
+    <input type="text" id="username" placeholder="Enter username"><br><br>
+
+    <label for="password">Password:</label><br>
+    <input type="password" id="password" placeholder="Enter password"><br><br>
+
+    <button onclick="registerUser()">Register</button>
+
+    <p id="result"></p>
+
+    <br>
+    <a href="login.html">Go to Login</a>
+
+    <script>
+        async function registerUser() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const result = document.getElementById("result");
+
+            if (!username || !password) {
+                result.innerText = "Username болон password оруулна уу.";
+                return;
+            }
+
+            const soapRequest = `
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:auth="http://example.com/authsoap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <auth:RegisterUserRequest>
+         <auth:username>${username}</auth:username>
+         <auth:password>${password}</auth:password>
+      </auth:RegisterUserRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`;
+
+            try {
+                const response = await fetch("http://localhost:8081/ws", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/xml"
+                    },
+                    body: soapRequest
+                });
+
+                const text = await response.text();
+                console.log(text);
+
+                if (text.includes("User registered successfully")) {
+                    result.innerText = "User registered successfully";
+                } else {
+                    result.innerText = text;
+                }
+            } catch (error) {
+                console.error(error);
+                result.innerText = "Register хийх үед алдаа гарлаа.";
+            }
+        }
+    </script>
+</body>
+</html>
