@@ -1,5 +1,0 @@
-package com.example.userjson.config;
-
-public class CorsConfig {
-
-}
