@@ -21,45 +21,52 @@ public class AuthEndpoint {
 
     private static final String NAMESPACE_URI = "http://example.com/authsoap";
 
-    // Simple in-memory storage
-    private Map<String, String> users = new HashMap<>();
-    private Map<String, String> tokens = new HashMap<>();
+    // In-memory storage
+    private final Map<String, String> users = new HashMap<>();
+    private final Map<String, String> tokens = new HashMap<>();
 
-
-    // RegisterUser SOAP Operation
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "RegisterUserRequest")
     @ResponsePayload
     public RegisterUserResponse registerUser(@RequestPayload RegisterUserRequest request) {
 
         RegisterUserResponse response = new RegisterUserResponse();
 
-        users.put(request.getUsername(), request.getPassword());
+        String username = request.getUsername();
+        String password = request.getPassword();
 
-        response.setMessage("User registered successfully");
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            response.setMessage("Username or password cannot be empty");
+            return response;
+        }
+
+        if (users.containsKey(username)) {
+            response.setMessage("User already exists");
+        } else {
+            users.put(username, password);
+            response.setMessage("User registered successfully");
+        }
 
         return response;
     }
 
-
-    // LoginUser SOAP Operation
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "LoginUserRequest")
     @ResponsePayload
     public LoginUserResponse loginUser(@RequestPayload LoginUserRequest request) {
 
         LoginUserResponse response = new LoginUserResponse();
 
-        String storedPassword = users.get(request.getUsername());
+        String username = request.getUsername();
+        String password = request.getPassword();
 
-        if (storedPassword != null && storedPassword.equals(request.getPassword())) {
+        String storedPassword = users.get(username);
 
+        if (storedPassword != null && storedPassword.equals(password)) {
             String token = UUID.randomUUID().toString();
-            tokens.put(token, request.getUsername());
+            tokens.put(token, username);
 
             response.setToken(token);
             response.setMessage("Login successful");
-
         } else {
-
             response.setToken("");
             response.setMessage("Invalid credentials");
         }
@@ -67,8 +74,6 @@ public class AuthEndpoint {
         return response;
     }
 
-
-    // ValidateToken SOAP Operation
     @PayloadRoot(namespace = NAMESPACE_URI, localPart = "ValidateTokenRequest")
     @ResponsePayload
     public ValidateTokenResponse validateToken(@RequestPayload ValidateTokenRequest request) {

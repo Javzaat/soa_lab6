@@ -4,22 +4,199 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile Page</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Profile Page</h1>
+    <div class="container">
+        <h1>Profile Page</h1>
 
-    <button onclick="loadProfiles()">Load Profiles</button>
-    <button onclick="logout()">Logout</button>
+        <label for="id">ID (Update/Delete үед):</label>
+        <input type="number" id="id" placeholder="Enter user id">
 
-    <pre id="profiles"></pre>
+        <label for="name">Name:</label>
+        <input type="text" id="name" placeholder="Enter name">
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" placeholder="Enter email">
+
+        <label for="bio">Bio:</label>
+        <input type="text" id="bio" placeholder="Enter bio">
+
+        <label for="phone">Phone:</label>
+        <input type="text" id="phone" placeholder="Enter phone">
+
+        <div class="actions">
+            <button onclick="createProfile()">Create</button>
+            <button onclick="updateProfile()">Update</button>
+            <button onclick="deleteProfile()">Delete</button>
+            <button onclick="loadProfiles()">Load</button>
+            <button class="secondary-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <p id="message" class="message"></p>
+        <pre id="profiles"></pre>
+    </div>
 
     <script>
-        async function loadProfiles() {
-            const token = localStorage.getItem("token");
-            const profiles = document.getElementById("profiles");
+        function getToken() {
+            return localStorage.getItem("token");
+        }
+
+        function getProfileData() {
+            return {
+                name: document.getElementById("name").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                bio: document.getElementById("bio").value.trim(),
+                phone: document.getElementById("phone").value.trim()
+            };
+        }
+
+        function clearInputs() {
+            document.getElementById("id").value = "";
+            document.getElementById("name").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("bio").value = "";
+            document.getElementById("phone").value = "";
+        }
+
+        function validateProfileData(data) {
+            return data.name && data.email && data.bio && data.phone;
+        }
+
+        async function createProfile() {
+            const token = getToken();
+            const message = document.getElementById("message");
+            const profileData = getProfileData();
 
             if (!token) {
-                profiles.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            if (!validateProfileData(profileData)) {
+                message.innerText = "Бүх талбарыг бөглөнө үү.";
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:8080/users", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    message.innerText = "Create алдаа: " + text;
+                    return;
+                }
+
+                message.innerText = "Profile амжилттай үүслээ.";
+                clearInputs();
+                loadProfiles();
+            } catch (error) {
+                console.error(error);
+                message.innerText = "Create хийх үед алдаа гарлаа.";
+            }
+        }
+
+        async function updateProfile() {
+            const token = getToken();
+            const id = document.getElementById("id").value.trim();
+            const message = document.getElementById("message");
+            const profileData = getProfileData();
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            if (!id) {
+                message.innerText = "Update хийхийн тулд ID оруулна уу.";
+                return;
+            }
+
+            if (!validateProfileData(profileData)) {
+                message.innerText = "Update хийхийн тулд бүх талбарыг бөглөнө үү.";
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/users/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    message.innerText = "Update алдаа: " + text;
+                    return;
+                }
+
+                message.innerText = "Profile амжилттай шинэчлэгдлээ.";
+                clearInputs();
+                loadProfiles();
+            } catch (error) {
+                console.error(error);
+                message.innerText = "Update хийх үед алдаа гарлаа.";
+            }
+        }
+
+        async function deleteProfile() {
+            const token = getToken();
+            const id = document.getElementById("id").value.trim();
+            const message = document.getElementById("message");
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            if (!id) {
+                message.innerText = "Delete хийхийн тулд ID оруулна уу.";
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/users/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    }
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    message.innerText = "Delete алдаа: " + text;
+                    return;
+                }
+
+                message.innerText = text;
+                clearInputs();
+                loadProfiles();
+            } catch (error) {
+                console.error(error);
+                message.innerText = "Delete хийх үед алдаа гарлаа.";
+            }
+        }
+
+        async function loadProfiles() {
+            const token = getToken();
+            const profiles = document.getElementById("profiles");
+            const message = document.getElementById("message");
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
                 return;
             }
 
@@ -38,10 +215,12 @@
                     return;
                 }
 
+                message.innerText = "";
+
                 try {
                     const data = JSON.parse(text);
                     profiles.innerText = JSON.stringify(data, null, 2);
-                } catch {
+                } catch (e) {
                     profiles.innerText = text;
                 }
             } catch (error) {

@@ -4,27 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Login Page</h1>
+    <div class="container">
+        <h1>Login Page</h1>
 
-    <label for="username">Username:</label><br>
-    <input type="text" id="username" placeholder="Enter username"><br><br>
+        <label for="username">Username:</label>
+        <input type="text" id="username" placeholder="Enter username">
 
-    <label for="password">Password:</label><br>
-    <input type="password" id="password" placeholder="Enter password"><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" placeholder="Enter password">
 
-    <button onclick="loginUser()">Login</button>
+        <button onclick="loginUser()">Login</button>
 
-    <p id="result"></p>
+        <p id="result" class="message"></p>
 
-    <br>
-    <a href="register.html">Go to Register</a>
+        <a href="register.html">Go to Register</a>
+    </div>
 
     <script>
         async function loginUser() {
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
             const result = document.getElementById("result");
 
             if (!username || !password) {
@@ -32,17 +34,19 @@
                 return;
             }
 
+            localStorage.removeItem("token");
+
             const soapRequest = `
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:auth="http://example.com/authsoap">
-   <soapenv:Header/>
-   <soapenv:Body>
-      <auth:LoginUserRequest>
-         <auth:username>${username}</auth:username>
-         <auth:password>${password}</auth:password>
-      </auth:LoginUserRequest>
-   </soapenv:Body>
-</soapenv:Envelope>`;
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                    xmlns:aut="http://example.com/authsoap">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <aut:LoginUserRequest>
+            <aut:username>${username}</aut:username>
+            <aut:password>${password}</aut:password>
+        </aut:LoginUserRequest>
+    </soapenv:Body>
+    </soapenv:Envelope>`;
 
             try {
                 const response = await fetch("http://localhost:8081/ws", {
@@ -54,17 +58,28 @@
                 });
 
                 const text = await response.text();
-                console.log(text);
+                console.log("SOAP RESPONSE:", text);
 
-                const tokenMatch = text.match(/<ns2:token>(.*?)<\/ns2:token>/);
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, "text/xml");
 
-                if (tokenMatch && tokenMatch[1]) {
-                    const token = tokenMatch[1];
+                const tokenElement =
+                    xml.getElementsByTagName("ns2:token")[0] ||
+                    xml.getElementsByTagName("token")[0];
+
+                const messageElement =
+                    xml.getElementsByTagName("ns2:message")[0] ||
+                    xml.getElementsByTagName("message")[0];
+
+                const token = tokenElement ? tokenElement.textContent.trim() : "";
+                const message = messageElement ? messageElement.textContent.trim() : "";
+
+                if (token) {
                     localStorage.setItem("token", token);
                     result.innerText = "Login successful";
                     window.location.href = "profile.html";
                 } else {
-                    result.innerText = "Login амжилтгүй.";
+                    result.innerText = message || "Login failed";
                 }
             } catch (error) {
                 console.error(error);
